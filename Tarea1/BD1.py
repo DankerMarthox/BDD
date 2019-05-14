@@ -62,28 +62,13 @@ def fixDF1(name1):
     ############## fin edicion sansanoplay ##############
     return df1
 
-#--------------------------------------------------------------------------------------------------> main functions
-def connectToDatabase(Name, port, serviceName, user, pwd):
-    con = cx.makedsn(Name, port, service_name = serviceName)
-    Dat = cx.connect(user = user, password = pwd, dsn = con)
-    return Dat
+#--------------------------------------------------------------------------------------------------> main function
+#                       CRUD 
+# nintendo: id_juego,nombre,genero,desarrollador,publicador,fecha de estreno,exclusividad,ventas globales,rating
+# sansanoplay: id_juego,nombre,precio,stock,bodega,vendidos
 
-
-def crearTablas(Database):
-    cursor = Database.cursor()
-    try:
-        cursor.execute("CREATE TABLE sansanoplay (id_juego INTEGER NOT NULL, nombre VARCHAR2(80) NOT NULL, precio INTEGER, stock INTEGER, bodega INTEGER, vendidos INTEGER, PRIMARY KEY (id_juego) )")
-        print("Se creó la tabla Sansanoplay")
-    except:
-        print("Error al crear tabla (Quizas ya existe)")
-        pass
-
-    try:
-        cursor.execute("CREATE TABLE nintendo (id_juego INTEGER NOT NULL, nombre VARCHAR2(120) NOT NULL, genero VARCHAR2(50), desarrollador VARCHAR2(50), publicador VARCHAR2(50), fecha_estreno DATE, exclusividad NUMBER(1), ventas_globales INTEGER, rating INTEGER, PRIMARY KEY (id_juego))")
-        print("Se creó la tabla Nintendo")
-    except:
-        print("Error al crear tabla (Quizas ya existe)")
-        pass
+#def updateTableRow(DataBase1, Database2, unidadesCompra):
+    
 
 
 def __main__():
@@ -93,13 +78,17 @@ def __main__():
     
     df1 = fixDF1("Sansanoplay.csv")
     df2 = fixDF2("Nintendo.csv")
-    
+
     df1.to_sql('sansanoplay', connection, if_exists='replace', index=False)
     df2.to_sql('nintendo', connection, if_exists='replace', index=False)
 
+    metadata = sa.MetaData(bind=connection)
 
-    #crearTablas(DB)
-    #insertCSVToDat(df1, DB, "sansanoplay" )
+    nintendo = sa.Table('nintendo', metadata, autoload=True, autoload_with=oracle_db)
+    sansanoplay = sa.Table('sansanoplay', metadata, autoload=True, autoload_with=oracle_db)
+
+    s = sa.sql.select([nintendo])
+    print(s)
 
 
 __main__()

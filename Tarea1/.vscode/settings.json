@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "C:\\Users\\marth\\AppData\\Local\\Programs\\Python\\Python37-32\\python.exe",
+    "terminal.explorerKind": "external",
+    "python.formatting.provider": "black"
+}
