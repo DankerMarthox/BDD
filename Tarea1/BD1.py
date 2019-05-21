@@ -28,9 +28,21 @@ def fixDF2(name2):
 
     # cambio formato nombres
     df2["nombre"] = df2["nombre"].str.replace(r"\"","'")
+    df2["nombre"] = df2["nombre"].astype(str)
+
+    # To str
+    # Genero
+    df2["genero"] = df2["genero"].astype(str)
+
+    # desarrollador
+    df2["desarrollador"] = df2["desarrollador"].astype(str)
+
+    # publicador
+    df2["publicador"] = df2["publicador"].astype(str)
 
     #exclusividad
     df2["exclusividad"] = df2["exclusividad"].str.replace("Si","1").str.replace("No","0")
+    df2["exclusividad"] = pd.to_numeric( df2["exclusividad"])
 
     # nombre columnas 
     #id_juego,nombre,genero,desarrollador,publicador,fecha de estreno,exclusividad,ventas globales,rating
@@ -43,7 +55,11 @@ def fixDF1(name1):
     # id_juego,nombre,precio,stock,bodega,vendidos
     df1 = pd.read_csv(name1 , sep=',', engine='python')
     ############## inicio edicion sansanoplay.csv ##############
-   
+    # cambio formato nombres
+    
+    df1["nombre"] = df1["nombre"].str.replace(r"\"","'")
+    df1["nombre"] = df1["nombre"].astype(str)
+    
     # precio juegos
     df1["precio"] = np.random.randint(20, 55, size=len(df1))
 
@@ -67,28 +83,103 @@ def fixDF1(name1):
 # nintendo: id_juego,nombre,genero,desarrollador,publicador,fecha de estreno,exclusividad,ventas globales,rating
 # sansanoplay: id_juego,nombre,precio,stock,bodega,vendidos
 
-#def updateTableRow(DataBase1, Database2, unidadesCompra):
-    
 
-
-def __main__():
-
-    oracle_db = sa.create_engine('oracle://TestOne:oozei7viing6ooL@Tarea1')
-    connection = oracle_db.connect()
-    
+def ToSql(connection):
+    # Insertar las tablas en DataBase
     df1 = fixDF1("Sansanoplay.csv")
     df2 = fixDF2("Nintendo.csv")
 
-    df1.to_sql('sansanoplay', connection, if_exists='replace', index=False)
-    df2.to_sql('nintendo', connection, if_exists='replace', index=False)
+    df2.to_sql('nintendo', connection, dtype={'nombre': sa.String(100), 
+                                              'genero': sa.String(100),
+                                              'desarrollador': sa.String(100),
+                                              'publicador': sa.String(100)}, 
+                if_exists='replace', index=False)
+    df1.to_sql('sansanoplay', connection, dtype={'nombre': sa.String(100)}, 
+                if_exists='replace', index=False)
 
+    return connection
+
+def viewTop5(connection):
+    # vista de los 5 juegos exclusivos mas caros
+    connection.execute('''
+    create view TOP_5_EXCLUSIVE AS
+        select *
+        from(
+            select 
+                sansanoplay.id_juego,sansanoplay.precio,
+                sansanoplay.vendidos,
+                nintendo.ventas_globales, nintendo.nombre 
+            from 
+                sansanoplay 
+            join 
+                nintendo 
+            on 
+                sansanoplay.id_juego = nintendo.id_juego 
+            where
+                nintendo.exclusividad = 1
+            order by 
+            sansanoplay.precio desc
+        )
+        where
+            rownum <=5  ''')
+
+def view3Genres(connection, var):
+    # vista de los 3 generos mas vendidos
+    if var:
+        # GLOBAL
+        connection.execute('''
+        create view TOP_3_SOLD_GLOBAL as
+            select *
+            from(
+                select 
+                    genero,
+                    count(ventas_globales),
+                from 
+                    nintendo
+                group by
+                    genero  
+                order by 
+                count(ventas_globales) desc
+            )
+            where
+                rownum <=3  ''')
+    else:
+        # LOCAL
+        connection.execute('''
+        create view TOP_3_SOLD_LOCAL as
+            select *
+            from(
+                select 
+                    genero,
+                    count(vendidos),
+                from 
+                    sansanoplay 
+                group by
+                    genero
+                order by 
+                count(vendidos) desc
+            )
+            where
+                rownum <=3  ''')
+
+def __main__():
+
+    User,Pass,Db = "TestOne","oozei7viing6ooL","Tarea1"
+    oracle_db = sa.create_engine('oracle://'+User+':'+Pass+'@'+Db)
+    connection = oracle_db.connect()
+
+    #ToSql(connection)
+    #viewTop5(connection)
+    view3Genres(connection, True)
+    
     metadata = sa.MetaData(bind=connection)
 
     nintendo = sa.Table('nintendo', metadata, autoload=True, autoload_with=oracle_db)
     sansanoplay = sa.Table('sansanoplay', metadata, autoload=True, autoload_with=oracle_db)
-
-    s = sa.sql.select([nintendo])
-    print(s)
+    top5 = sa.Table('TOP_5_EXCLUSIVE', metadata, autoload=True, autoload_with=oracle_db)
+    
+    s = connection.execute(sa.sql.select([top5])).fetchall()
+    print(pd.DataFrame(s,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
 
 
 __main__()
