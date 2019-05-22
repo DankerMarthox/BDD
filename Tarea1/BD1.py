@@ -169,11 +169,11 @@ def __main__():
     oracle_db = sa.create_engine('oracle://'+User+':'+Pass+'@'+Db)
     connection = oracle_db.connect()
 
-    ToSql(connection)
-    dropViews(connection)
-    viewTop5(connection)
-    view3Genres(connection, True)
-    view3Genres(connection, False)
+    # ToSql(connection)
+    # dropViews(connection)
+    # viewTop5(connection)
+    # view3Genres(connection, True)
+    # view3Genres(connection, False)
     
     # Metadata de las tablas del database
     metadata = sa.MetaData(bind=connection)
@@ -192,13 +192,16 @@ def __main__():
     V2 = connection.execute(sa.sql.select([top3G])).fetchall()
     V3 = connection.execute(sa.sql.select([top3L])).fetchall()
 
+    # Ejemplo select x from t where clause
+    #stmt = sa.select([nintendo.c.id_juego,nintendo.c.nombre]).where(nintendo.c.id_juego == 1)
+    #print(connection.excecute(stmt))
 
     print("\n\n<-------------- TOP JUEGOS EXCLUSIVOS MAS CAROS ------------------------->\n")    
     print(pd.DataFrame(V1,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
     print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS GLOBALMENTE ------------------>\n")
-    print(pd.DataFrame(V2, columns = ["GENRE", "SELLS"]))
+    print(pd.DataFrame(V2, columns = ["GENRE", "SALES"]))
     print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS LOCALMENTE ------------------->\n")
-    print(pd.DataFrame(V3, columns = ["GENRE", "SELLS"]))
+    print(pd.DataFrame(V3, columns = ["GENRE", "SALES"]))
 
 
 
