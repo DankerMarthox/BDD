@@ -83,7 +83,7 @@ def fixDF1(name1):
 # nintendo: id_juego,nombre,genero,desarrollador,publicador,fecha de estreno,exclusividad,ventas globales,rating
 # sansanoplay: id_juego,nombre,precio,stock,bodega,vendidos
 
-
+# Importar tablas a SQL
 def ToSql(connection):
     # Insertar las tablas en DataBase
     df1 = fixDF1("Sansanoplay.csv")
@@ -99,8 +99,11 @@ def ToSql(connection):
 
     return connection
 
+
+# <-------------------- Creacion de vistas ------------------->
+
+# vista de los 5 juegos exclusivos mas caros
 def viewTop5(connection):
-    # vista de los 5 juegos exclusivos mas caros
     connection.execute('''
     create view TOP_5_EXCLUSIVE AS
         select *
@@ -123,44 +126,42 @@ def viewTop5(connection):
         where
             rownum <=5  ''')
 
+
+# vista de los 3 generos mas vendidos 
+# if (var = True ) => vista global, else => vista local
 def view3Genres(connection, var):
-    # vista de los 3 generos mas vendidos
     if var:
         # GLOBAL
         connection.execute('''
-        create view TOP_3_SOLD_GLOBAL as
-            select *
-            from(
-                select 
-                    genero,
-                    count(ventas_globales),
-                from 
-                    nintendo
-                group by
-                    genero  
-                order by 
-                count(ventas_globales) desc
-            )
-            where
-                rownum <=3  ''')
+        create view TOP_3_SOLD_GLOBAL AS
+            select * from (
+                select genero, sum(ventas_globales)
+                from nintendo 
+                group by genero 
+                order by sum(ventas_globales) desc)
+            where rownum <=3''')
     else:
         # LOCAL
         connection.execute('''
         create view TOP_3_SOLD_LOCAL as
-            select *
-            from(
-                select 
-                    genero,
-                    count(vendidos),
-                from 
-                    sansanoplay 
-                group by
-                    genero
-                order by 
-                count(vendidos) desc
-            )
-            where
-                rownum <=3  ''')
+            select * from(
+                select genero, sum(vendidos) as sold from (
+                    select nintendo.id_juego, nintendo.genero, sansanoplay.vendidos
+                    from nintendo
+                    join sansanoplay
+                    on nintendo.id_juego = sansanoplay.id_juego )
+                group by genero
+                order by sold desc)
+            where rownum <= 3 ''')
+
+# Eliminar todas las vistas
+def dropViews(connection):
+    connection.execute("drop view TOP_5_EXCLUSIVE")
+    connection.execute("drop view TOP_3_SOLD_GLOBAL")
+    connection.execute("drop view TOP_3_SOLD_LOCAL")
+
+
+# <------------------- Fin vistas ------------------------->
 
 def __main__():
 
@@ -168,18 +169,37 @@ def __main__():
     oracle_db = sa.create_engine('oracle://'+User+':'+Pass+'@'+Db)
     connection = oracle_db.connect()
 
-    #ToSql(connection)
-    #viewTop5(connection)
+    ToSql(connection)
+    dropViews(connection)
+    viewTop5(connection)
     view3Genres(connection, True)
+    view3Genres(connection, False)
     
+    # Metadata de las tablas del database
     metadata = sa.MetaData(bind=connection)
 
+    # Tablas del database
     nintendo = sa.Table('nintendo', metadata, autoload=True, autoload_with=oracle_db)
     sansanoplay = sa.Table('sansanoplay', metadata, autoload=True, autoload_with=oracle_db)
+
+    # Views del Database segun especificaciones de la tarea
     top5 = sa.Table('TOP_5_EXCLUSIVE', metadata, autoload=True, autoload_with=oracle_db)
+    top3G = sa.Table('TOP_3_SOLD_GLOBAL', metadata, autoload=True, autoload_with=oracle_db)
+    top3L = sa.Table('TOP_3_SOLD_LOCAL', metadata, autoload=True, autoload_with=oracle_db)
+
     
-    s = connection.execute(sa.sql.select([top5])).fetchall()
-    print(pd.DataFrame(s,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
+    V1 = connection.execute(sa.sql.select([top5])).fetchall()
+    V2 = connection.execute(sa.sql.select([top3G])).fetchall()
+    V3 = connection.execute(sa.sql.select([top3L])).fetchall()
+
+
+    print("\n\n<-------------- TOP JUEGOS EXCLUSIVOS MAS CAROS ------------------------->\n")    
+    print(pd.DataFrame(V1,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
+    print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS GLOBALMENTE ------------------>\n")
+    print(pd.DataFrame(V2, columns = ["GENRE", "SELLS"]))
+    print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS LOCALMENTE ------------------->\n")
+    print(pd.DataFrame(V3, columns = ["GENRE", "SELLS"]))
+
 
 
 __main__()
