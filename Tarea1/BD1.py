@@ -166,32 +166,114 @@ def dropViews(connection):
 
 # <------------------- Búsqueda --------------------------->
 
-def busqueda(String, connection):
+def busqueda(String, connection, bool):
 
-    return connection.execute('''
+    if bool:
+        return connection.execute('''
 
-        select s.id_juego, n.nombre,n.genero,n.rating,n.exclusividad,
-               s.precio,s.stock,s.bodega,s.vendidos
-        from sansanoplay s
-        join nintendo n
-        on s.id_juego = n.id_juego
-        where (n.nombre like '%'''+String+'''%')
-        or (s.id_juego like '%'''+String+'''%')
-        order by s.id_juego
-    ''')
+            select s.id_juego, n.nombre,n.genero,n.rating,n.exclusividad,
+                s.precio,s.stock,s.bodega,s.vendidos
+            from sansanoplay s
+            join nintendo n
+            on s.id_juego = n.id_juego
+            where s.id_juego like '%'''+String+'''%'
+            order by s.id_juego
+        ''')
+    else: 
+        return connection.execute('''
+
+            select s.id_juego, n.nombre,n.genero,n.rating,n.exclusividad,
+                s.precio,s.stock,s.bodega,s.vendidos
+            from sansanoplay s
+            join nintendo n
+            on s.id_juego = n.id_juego
+            where n.nombre like '%'''+String+'''%'
+            order by s.id_juego
+        ''')
 
 # <------------------- Eliminación --------------------------->
 
-def deleteRecord(connection, id):
+def deleteRecord(connection, idJuego):
     try:
         connection.execute('''
-            delete from sansanoplay where id_juego = '''+id+'''
+            delete from sansanoplay where id_juego = '''+idJuego+'''
         ''')
         connection.execute('''
-            delete from nintendo where id_juego = '''+id+'''
+            delete from nintendo where id_juego = '''+idJuego+'''
         ''')
+        print("\nRegistro borrado exitosamente.\n")
     except Exception:
-        print("Error. No se pudo borrar el registro.\nIntente nuevamente.")
+        print("\nError. No se pudo borrar el registro.\nIntente nuevamente.\n")
+
+
+# <------------------- Venta --------------------------->
+def Sell(connection, idJuego, unitsSold):
+    stock = connection.execute(
+            '''select stock from sansanoplay where id_juego = '''
+            + idJuego).fetchall()[0][0]
+
+    if int(unitsSold) < stock and int(unitsSold) > 0:
+        connection.execute('''
+            update 
+                nintendo
+            set 
+                ventas_globales = ventas_globales + '''+unitsSold+'''
+            where 
+                id_juego = '''+idJuego+'''
+        ''')
+        connection.execute('''
+            update 
+                sansanoplay
+            set 
+                vendidos = vendidos + '''+unitsSold+''',
+                stock = stock - '''+unitsSold+'''
+            where 
+                id_juego = '''+idJuego+'''
+        ''')
+        return True
+    else:
+        print("\nNo es posible realizar la venta.\n")
+        return False
+
+def verifyStock(tabla, connection, idJuego):
+
+    stock = connection.execute(
+            sa.select(
+                [tabla.c.stock]
+            ).where( 
+            tabla.c.id_juego == int(idJuego))).fetchall()[0][0]
+    bodega = connection.execute(
+            sa.select(
+                [tabla.c.bodega]
+            ).where( 
+            tabla.c.id_juego == int(idJuego))).fetchall()[0][0]
+
+    if stock < 10 :
+        print("\nTienda:\tSIN STOCK\n")
+        print("\n\t\t[VERIFICAR BODEGA]")
+
+        if bodega > 0:
+            print("\nBodega:\t",bodega)
+            print("\n\t\t[REPONER STOCK 10]")
+
+            connection.execute('''
+            update 
+                sansanoplay
+            set 
+                stock = stock + 10,
+                bodega = bodega - 10
+            where
+                id_juego = '''+idJuego+'''
+            ''')
+            print("\n\t\t[STOCK ACTUALIZADO]\n")
+            return True
+        else:
+            print("\nBodega:\tSIN STOCK\n")
+            print("\nNO SE HA PODIDO ACTUALIZAR STOCK")
+            return False
+    else: 
+        print("\nQuedan ",stock," unidades.\n")
+        return True
 
 
 def __main__():
@@ -200,11 +282,11 @@ def __main__():
     oracle_db = sa.create_engine('oracle://'+User+':'+Pass+'@'+Db)
     connection = oracle_db.connect()
 
-    # ToSql(connection)
-    # dropViews(connection)
-    # viewTop5(connection)
-    # view3Genres(connection, True)
-    # view3Genres(connection, False)
+    ToSql(connection)
+    dropViews(connection)
+    viewTop5(connection)
+    view3Genres(connection, True)
+    view3Genres(connection, False)
     
     # Metadata de las tablas del database
     metadata = sa.MetaData(bind=connection)
@@ -217,7 +299,6 @@ def __main__():
     top5 = sa.Table('TOP_5_EXCLUSIVE', metadata, autoload=True, autoload_with=oracle_db)
     top3G = sa.Table('TOP_3_SOLD_GLOBAL', metadata, autoload=True, autoload_with=oracle_db)
     top3L = sa.Table('TOP_3_SOLD_LOCAL', metadata, autoload=True, autoload_with=oracle_db)
-
     
     V1 = connection.execute(sa.sql.select([top5])).fetchall()
     V2 = connection.execute(sa.sql.select([top3G])).fetchall()
@@ -227,10 +308,10 @@ def __main__():
     #stmt = sa.select([nintendo.c.id_juego,nintendo.c.nombre]).where(nintendo.c.id_juego == 1)
     #print(connection.excecute(stmt))
     while 1:
-        print("Que desea ver?:\n\n\t[1] Top 5 juegos exclusivos mas vendidos.")
+        print("\nQue desea hacer?:\n\n\t[1] Top 5 juegos exclusivos mas vendidos.")
         print("\t[2] Top 3 géneros más vendidos globalmente.\n\t[3] Top 3 géneros más vendidos localmente.")
         print("\t[4] Buscar un juego.\n\t[5] Eliminar un juego (Por favor verificar elminación buscando el juego).")        
-        print("\t[-100] Exit.")
+        print("\t[6] Vender juego.\n\t[-100] Exit.")
 
         while True:
             try:
@@ -257,15 +338,58 @@ def __main__():
             print("\n\n")
         
         elif option == 4:
+            print("Desea realizar búsqueda por ID o por nombre del juego?\n\n[1] ID\n[2] Nombre")
+            
+            while True:
+                try:
+                    tp = int(input("\nSelección: "))
+                    if tp == 1 or tp == 2:
+                        break
+                    else:
+                        print("Valor incorrecto. Ingrese selección nuevamente.")
+
+                except ValueError:
+                    print("Oops! Valor no válido. Por favor ingrése número nuevamente...")
+
             string = input("\nIngrese búsqueda: ")
-            query = busqueda(string, connection)
+
+            if tp == 1:
+                query = busqueda(string, connection, True)
+            elif tp == 2:
+                query = busqueda(string, connection, False)
+            
+            newDat = pd.DataFrame(query, columns = ["id_juego","nombre","genero","rating",
+                                                    "exclusividad","precio","stock","bodega","vendidos"])
             os.system('cls')
-            print(pd.DataFrame(query, columns = ["id_juego","nombre","genero","rating",
-                                                "exclusividad","precio","stock","bodega","vendidos"]))
+            
+            if not newDat.empty:
+                print("Resultados Búsqueda\n")
+                print(newDat)
+            else:
+                print("Búsqueda sin resultados.")
             print("\n\n")
 
+        elif option == 5:
+            string = input("\nIngrese registro a borrar (ID_JUEGO): ")
+            deleteRecord(connection, string)
+        
+        elif option == 6:
+            idGame = input("\nIngrese ID del juego a vender: ")
+
+            if not pd.DataFrame(busqueda(idGame, connection, True)).empty:
+                if verifyStock(sansanoplay, connection, idGame):
+                    quantity = input("Ingrese cantidades a vender: ")
+                    if Sell(connection, idGame, quantity):
+                        print("\nVenta realizada exitosamente.\n")
+
+                else:
+                    print("\nNo hay stock ni en tienda ni en bodega, llame a su jefe.")
+            else:
+                print("\nID inválido.\n")
         elif option == -100:
             break
+        else:
+            print("\nOpción no válida.\n")
 
 
 __main__()
