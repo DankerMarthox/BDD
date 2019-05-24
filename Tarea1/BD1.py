@@ -3,6 +3,7 @@ import pandas as pd
 import sqlalchemy as sa
 
 from random import randint as rd
+import os
 
 
 def fixDF2(name2):
@@ -163,6 +164,36 @@ def dropViews(connection):
 
 # <------------------- Fin vistas ------------------------->
 
+# <------------------- Búsqueda --------------------------->
+
+def busqueda(String, connection):
+
+    return connection.execute('''
+
+        select s.id_juego, n.nombre,n.genero,n.rating,n.exclusividad,
+               s.precio,s.stock,s.bodega,s.vendidos
+        from sansanoplay s
+        join nintendo n
+        on s.id_juego = n.id_juego
+        where (n.nombre like '%'''+String+'''%')
+        or (s.id_juego like '%'''+String+'''%')
+        order by s.id_juego
+    ''')
+
+# <------------------- Eliminación --------------------------->
+
+def deleteRecord(connection, id):
+    try:
+        connection.execute('''
+            delete from sansanoplay where id_juego = '''+id+'''
+        ''')
+        connection.execute('''
+            delete from nintendo where id_juego = '''+id+'''
+        ''')
+    except Exception:
+        print("Error. No se pudo borrar el registro.\nIntente nuevamente.")
+
+
 def __main__():
 
     User,Pass,Db = "TestOne","oozei7viing6ooL","Tarea1"
@@ -195,14 +226,46 @@ def __main__():
     # Ejemplo select x from t where clause
     #stmt = sa.select([nintendo.c.id_juego,nintendo.c.nombre]).where(nintendo.c.id_juego == 1)
     #print(connection.excecute(stmt))
+    while 1:
+        print("Que desea ver?:\n\n\t[1] Top 5 juegos exclusivos mas vendidos.")
+        print("\t[2] Top 3 géneros más vendidos globalmente.\n\t[3] Top 3 géneros más vendidos localmente.")
+        print("\t[4] Buscar un juego.\n\t[5] Eliminar un juego (Por favor verificar elminación buscando el juego).")        
+        print("\t[-100] Exit.")
 
-    print("\n\n<-------------- TOP JUEGOS EXCLUSIVOS MAS CAROS ------------------------->\n")    
-    print(pd.DataFrame(V1,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
-    print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS GLOBALMENTE ------------------>\n")
-    print(pd.DataFrame(V2, columns = ["GENRE", "SALES"]))
-    print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS LOCALMENTE ------------------->\n")
-    print(pd.DataFrame(V3, columns = ["GENRE", "SALES"]))
+        while True:
+            try:
+                option = int(input("\nSelección: "))
+                break
+            except ValueError:
+                print("Oops! Número no válido. Por favor ingrése número nuevamente...")
+        if option == 1:
+            os.system('cls')
+            print("\n\n<-------------- TOP JUEGOS EXCLUSIVOS MAS CAROS ------------------------->\n")    
+            print(pd.DataFrame(V1,columns=["GAME_ID","PRICE (USD)","SOLD","GLOBAL SALES", "NAME"]))
+            print("\n\n")
 
+        elif option == 2:
+            os.system('cls')
+            print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS GLOBALMENTE ------------------>\n")
+            print(pd.DataFrame(V2, columns = ["GENRE", "SALES"]))
+            print("\n\n")
+
+        elif option == 3:
+            os.system('cls')
+            print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS LOCALMENTE ------------------->\n")
+            print(pd.DataFrame(V3, columns = ["GENRE", "SALES"]))
+            print("\n\n")
+        
+        elif option == 4:
+            string = input("\nIngrese búsqueda: ")
+            query = busqueda(string, connection)
+            os.system('cls')
+            print(pd.DataFrame(query, columns = ["id_juego","nombre","genero","rating",
+                                                "exclusividad","precio","stock","bodega","vendidos"]))
+            print("\n\n")
+
+        elif option == -100:
+            break
 
 
 __main__()
