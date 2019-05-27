@@ -10,7 +10,7 @@ def fixDF2(name2):
     # "Sansanoplay.csv", "Nintendo.csv"
     df2 = pd.read_csv(name2 , sep=',',engine='python')
 
-    ############## edicion Nintrendo.csv ##############
+    ############## edicion Nintendo.csv ##############
     # Q1 2018 -- January 1, 2018 to March 31, 2018
     # Q2 2018 -- April 1, 2018 to June 30, 2018
     # Q3 2018 -- July 1, 2018 to September 30, 2018
@@ -155,11 +155,41 @@ def view3Genres(connection, var):
                 order by sold desc)
             where rownum <= 3 ''')
 
+
+# vista de 3 desarrolladores con mas ventas en tienda
+def viewDevs(connection):
+    connection.execute('''
+        create view TOP_3_DEV as
+            select * from(
+                select desarrollador, sum(vendidos) as sold from (
+                    select nintendo.id_juego, nintendo.desarrollador, sansanoplay.vendidos
+                    from nintendo
+                    join sansanoplay 
+                    on nintendo.id_juego = sansanoplay.id_juego)
+                group by desarrollador
+                order by sold desc)
+            where rownum <= 3  ''')
+
+
+# vista de juegos por fecha segun rating
+def viewRating(connection):
+    connection.execute('''
+        create view TOP_RATING as
+            select nombre, rating, fecha_estreno
+            from nintendo
+            where rating > 3
+            order by fecha_estreno desc    
+    ''') 
+
+
 # Eliminar todas las vistas
 def dropViews(connection):
     connection.execute("drop view TOP_5_EXCLUSIVE")
     connection.execute("drop view TOP_3_SOLD_GLOBAL")
     connection.execute("drop view TOP_3_SOLD_LOCAL")
+    connection.execute("drop view TOP_3_DEV")
+    connection.execute("drop view TOP_RATING")
+
 
 
 # <------------------- Fin vistas ------------------------->
@@ -287,6 +317,8 @@ def __main__():
     viewTop5(connection)
     view3Genres(connection, True)
     view3Genres(connection, False)
+    viewDevs(connection)
+    viewRating(connection)
     
     # Metadata de las tablas del database
     metadata = sa.MetaData(bind=connection)
@@ -299,10 +331,14 @@ def __main__():
     top5 = sa.Table('TOP_5_EXCLUSIVE', metadata, autoload=True, autoload_with=oracle_db)
     top3G = sa.Table('TOP_3_SOLD_GLOBAL', metadata, autoload=True, autoload_with=oracle_db)
     top3L = sa.Table('TOP_3_SOLD_LOCAL', metadata, autoload=True, autoload_with=oracle_db)
+    top3D = sa.Table('TOP_3_DEV', metadata, autoload=True, autoload_with=oracle_db)
+    topR = sa.Table('TOP_RATING', metadata, autoload=True, autoload_with=oracle_db)
     
     V1 = connection.execute(sa.sql.select([top5])).fetchall()
     V2 = connection.execute(sa.sql.select([top3G])).fetchall()
     V3 = connection.execute(sa.sql.select([top3L])).fetchall()
+    V4 = connection.execute(sa.sql.select([top3D])).fetchall()
+    V5 = connection.execute(sa.sql.select([topR])).fetchall()
 
     # Ejemplo select x from t where clause
     #stmt = sa.select([nintendo.c.id_juego,nintendo.c.nombre]).where(nintendo.c.id_juego == 1)
@@ -310,8 +346,9 @@ def __main__():
     while 1:
         print("\nQue desea hacer?:\n\n\t[1] Top 5 juegos exclusivos mas vendidos.")
         print("\t[2] Top 3 géneros más vendidos globalmente.\n\t[3] Top 3 géneros más vendidos localmente.")
-        print("\t[4] Buscar un juego.\n\t[5] Eliminar un juego (Por favor verificar elminación buscando el juego).")        
-        print("\t[6] Vender juego.\n\t[-100] Exit.")
+        print("\t[4] Top 3 desarrolladoras con más ventas locales.\n\t[5] Top ratings.")        
+        print("\t[6] Buscar un juego.\n\t[7] Eliminar un juego (Por favor verificar elminación buscando el juego).")    
+        print("\t[8] Vender juego.\n\t[-100] Exit.")
 
         while True:
             try:
@@ -331,13 +368,25 @@ def __main__():
             print(pd.DataFrame(V2, columns = ["GENRE", "SALES"]))
             print("\n\n")
 
+        elif option == 4:
+            os.system('cls')
+            print("\n\n<-------------- TOP 3 DEVS TIENDA ------------------->\n")
+            print(pd.DataFrame(V4, columns = ["DEVELOPER", "SALES"]))
+            print("\n\n")
+        
         elif option == 3:
             os.system('cls')
             print("\n\n<-------------- TOP 3 GENEROS MAS VENDIDOS LOCALMENTE ------------------->\n")
             print(pd.DataFrame(V3, columns = ["GENRE", "SALES"]))
             print("\n\n")
         
-        elif option == 4:
+        elif option == 5:
+            os.system('cls')
+            print("\n\n<-------------- TOP RATINGS ------------------->\n")
+            print(pd.DataFrame(V5, columns = ["NAME", "RATING", "RELEASE DATE"]).to_string())
+            print("\n\n")
+        
+        elif option == 6:
             print("Desea realizar búsqueda por ID o por nombre del juego?\n\n[1] ID\n[2] Nombre")
             
             while True:
@@ -369,11 +418,11 @@ def __main__():
                 print("Búsqueda sin resultados.")
             print("\n\n")
 
-        elif option == 5:
+        elif option == 7:
             string = input("\nIngrese registro a borrar (ID_JUEGO): ")
             deleteRecord(connection, string)
         
-        elif option == 6:
+        elif option == 8:
             idGame = input("\nIngrese ID del juego a vender: ")
 
             if not pd.DataFrame(busqueda(idGame, connection, True)).empty:
