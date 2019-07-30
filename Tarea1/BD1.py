@@ -20,7 +20,6 @@ import os
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 User,Pass,Db = "TestOne","oozei7viing6ooL","Tarea1"
-
 #User, Pass, Db = "system", "bd213", "BD"#213"
 
 
@@ -291,6 +290,7 @@ def busqueda(String, connection, bool):
 
     if bool:
         return connection.execute('''
+
             SELECT s.id_juego, n.nombre, n.genero, n.rating, n.exclusividad, s.precio, s.stock, s.bodega, s.vendidos
             FROM sansanoplay s
             JOIN nintendo n
@@ -300,6 +300,7 @@ def busqueda(String, connection, bool):
         ''')
     else:
         return connection.execute('''
+
             SELECT s.id_juego, n.nombre, n.genero, n.rating, n.exclusividad, s.precio, s.stock, s.bodega, s.vendidos
             FROM sansanoplay s
             JOIN nintendo n
@@ -502,7 +503,7 @@ def insertData(connection): #Very long
                 Desarrolladores.append(desarrollador)
 
     if selection == 2 or respuesta == 1:
-        randomDev = ["XenTertainment", "Chaldeas", "Yhatoh", "Marcelo Mendoza"]
+        randomDev = ["XenTertainment", "Chaldeas", "Yhatoh", "Marcelo Mendoza", "Lito"]
         maxIndex = len(randomDev) - 1
         desarrollador = randomDev[rd(0, maxIndex)]
     print("\tSe ha ingresado el desarrollador: "+ desarrollador)
@@ -540,13 +541,13 @@ def insertData(connection): #Very long
                     break
 
             if in_lista == False:
-                publicador = publicador[0].lower() + publicador[1:].lower()
+                publicador = publicador[0].upper() + publicador[1:].lower()
                 Publicadores.append(publicador)
 
 
     # Esto en caso de que se deje random
     if selection == 2 or respuesta == 1:
-        randomPub = ["XenTertainment", "Chaldeas", "Yhatoh", "Marcelo Mendoza"]
+        randomPub = ["XenTertainment", "Chaldeas", "Yhatoh", "Marcelo Mendoza", "Lito"]
         maxIndex = len(randomPub) - 1
         publicador = randomPub[rd(0, maxIndex)]
     print("\tSe ha ingresado el publicador: "+ publicador)
@@ -628,7 +629,7 @@ def insertData(connection): #Very long
                             fecha += "/" + opFecha[0]
 
                         anno = int(opFecha[2])
-                        if anno > 100 or anno < 0:
+                        if anno > 99 or anno < 0:
                             print("\tFecha no permitida")
                             fecha = ""
 
@@ -1151,11 +1152,6 @@ def __main__():
 
         elif option == 9:
             insertData(connection)
-
-        elif option == 20:
-            print("TEST")
-            print(connection.execute("SELECT * FROM nintendo WHERE id_juego = 1400").fetchall())
-
 
         elif option == -100:
             os.system('cls')
