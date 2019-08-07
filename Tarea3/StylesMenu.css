@@ -1,0 +1,7 @@
+body {
+  margin: 350px;
+  padding: 0;
+  background-image: url(img/pastel_orange.jpg); 
+  background-size: cover;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+}
