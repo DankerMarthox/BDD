@@ -1,8 +1,5 @@
 
-
-
-
-<?php require('menu.php') ?>
+<?php require('connect.php') ?>
 <html>
     <head>
         <meta charset="UTF-8">
@@ -13,7 +10,8 @@
     <div class="form-area-register">    
         <img class="c-img" src='chaldea_logo.png' float:"left" width="80px">
         <right><h2>Instagramn't<br>Sign Up!</h2></right>
-        <form action="/Tarea3/menu.php" method="POST">
+
+        <form action="/Tarea3/signUp.php" method="POST">
             <?php include('errors.php'); ?>
             Username:<br>
             <input type="text" name="username" placeholder="Username" 
@@ -27,8 +25,11 @@
             Your E-mail:<br>
             <input type="text" name="email" placeholder="your email address goes here"                    
                     value="<?php echo $email; ?>"><br><br>
+        
             <button type="submit" class="btn" name="reg_user">Submit!</button>
+        
+            Already a member? <a href="Login.php">Sign in</a> 
         </form>
-    </div> 
+    </div>
 </body>
 </html>

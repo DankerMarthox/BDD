@@ -53,17 +53,17 @@ body {
 .form-area-register{
     position: absolute;
     border-radius: 10px;
-    top: 50%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%,-50%);
     width: 400px;
-    height: 600px;
+    height: 900px;
     box-sizing: border-box;
     background: rgba(19, 20, 20, 0.39);
     padding: 40px;
 }
 .form-area-register input, select{
-  margin-bottom: 20px;
+  margin-bottom: 5px;
   width: 100%;
 }
 .form-area-register input[type=text], 

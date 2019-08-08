@@ -1,45 +1,27 @@
+<?php 
+    session_start();
 
-
-
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Instagramn't</title>
-        <link rel="stylesheet" href="StylesMenu.css">
-    </head>
-<body>
-
-<?php
-    require('database.php');
-
-    // initializing variables
-    $username = "";
-    $password    = "";
-    $email    = "";
-    $bio    = "";
-    $errors = array(); 
-
-    //register user
-    if (isset($_POST['reg_user'])){
-        $username = pg_escape_string($db_connection,$_POST["username"]);
-        $password = pg_escape_string($db_connection,$_POST["password"]);
-        $email    = pg_escape_string($db_connection,$_POST["email"]);
-        $bio      = pg_escape_string($db_connection,$_POST["bio"]);
-        
-        //insert only if submit
-        $user_reg = "INSERT INTO usuarios (username, email, user_pass) 
-                 VALUES ('$username', '$email', '$password');";
-        $insert = pg_query($db_connection, $user_reg);
-        $user_check_query = "SELECT * FROM usuarios";
-        $select = pg_query($db_connection, $user_check_query);
-        $val = pg_fetch_all($select);
-    print_r($val);  
+    if(!isset($_SESSION['username'])){
+        $_SESSION['msg'] = "You must log in";
+        header('location: signUp.php');
     }
-    //comprobar si campos estan vacios
-    //if (empty($username)) { array_push($errors, "Username is required"); }
-    //if (empty($email)) { array_push($errors, "Email is required"); }
-    //if (empty($password)) { array_push($errors, "Password is required"); }
-    
-    
+    if(!isset($_SESSION['logout'])){
+        session_destroy();
+        unset($_SESSION['username']);
+        header("location: Login.php");
+    }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Menu :)</title>
+    <?php 
+        if(isset($_SESSION['success'])): ?>
+    IT WORKED
+</head>
+<body>
+</body>
 </html>
