@@ -1,0 +1,45 @@
+
+.body {
+  padding:10px;
+  text-align: center;
+}
+
+.header{
+  padding: 40px;
+  background: #3cc7e5;
+}
+
+.usr{
+  position:relative;
+  display: inline-block;
+  top:-100px;
+  left: 560px;
+}
+
+tit {
+  display:inline-block;
+  transform:translate(-15%,-50%);
+  color: white;
+  font-size: 50px;
+}
+
+.link{
+  font-size: 20px;
+  color: white;
+}
+
+.side{
+  position:relative;
+  text-align:center
+}
+.img{
+  display: inline-block;
+  border-radius: 100%;
+  position: relative;
+  right: 120px;
+  width: 100px;
+}
+
+.span {
+  background: #fd0;
+}
