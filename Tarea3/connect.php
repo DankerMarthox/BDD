@@ -1,7 +1,7 @@
 
 <?php
     session_start();
-    require('database.php');
+    include('database.php');
     
     // initializing variables
     $username = "";
@@ -23,7 +23,9 @@
         if (empty($password)) { array_push($errors, "Password is required"); }
         
         //check if user registered
-        $user_chck = "SELECT * from usuarios where username='$username' or email= '$email' limit 1;";
+        $user_chck = "SELECT * from usuarios 
+                        where username='$username' or email= '$email' 
+                        limit 1;";
         $chck = pg_query($db_connection, $user_chck);
         $result = pg_fetch_assoc($chck);
         echo pg_query($db_connection, "SELECT * from usuarios;");
@@ -40,8 +42,9 @@
         //if not registered, then do
         if(count($errors)==0){
 
-            $query = "INSERT INTO usuarios (username, email, user_pass, bio) values('$username', '$email', '$password','$bio')";
-            pg_query($db, $query);
+            $query = "INSERT INTO usuarios (username, email, user_pass, bio) 
+                    values('$username', '$email', '$password','$bio');";
+            pg_query($db_connection, $query);
 
             $_SESSION['username'] = $username;
             $_SESSION['success'] = "Logged in!";
@@ -49,6 +52,32 @@
             header('location: menu.php');
         }
     }
-    
-    
+
+    if(isset($_POST['login_usr'])){
+        $username = pg_escape_string($db_connection,$_POST["username"]);
+        $password = pg_escape_string($db_connection,$_POST["password"]);
+
+        if(empty($username)){
+            array_push($errors, 'Username is required');
+        }
+        if(empty($password)){
+            array_push($errors, 'Password is required');
+        }
+
+        if(count($errors) == 0){
+            $query = "SELECT * FROM usuarios WHERE username='$username'
+                            AND user_pass='$password';";
+
+            $results = pg_query($db_connection, $query);
+
+            if(pg_num_rows($results) == 1){
+                $_SESSION['username'] = $username;
+                $_SESSION['success'] =  "You are now logged in";
+                header('location: menu.php');
+            }else{
+                array_push($errors, "Wrong username or password, pls check");
+            }
+            
+        }
+    }  
 ?>

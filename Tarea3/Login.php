@@ -1,7 +1,7 @@
 
 
 
-<?php require('connect.php') ?>
+<?php include('connect.php') ?>
 <html>
     <head>
         <meta charset="UTF-8">
