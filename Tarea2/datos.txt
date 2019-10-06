@@ -1,0 +1,139 @@
+--PUBLICACIONES
+CREATE TABLE public.abstract_publicaciones
+(
+    user_id integer NOT NULL,
+    pub_id integer NOT NULL,
+    descrip character varying(256) COLLATE pg_catalog."default",
+    hashtag character varying(32) COLLATE pg_catalog."default",
+    fecha time without time zone,
+    CONSTRAINT "PUBLICACIONES_pkey" PRIMARY KEY (pub_id),
+    CONSTRAINT abstract_publicaciones_user_id_fkey FOREIGN KEY (user_id)
+        REFERENCES public.usuarios (user_id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.abstract_publicaciones
+    OWNER to postgres;
+
+
+--COMENTAN
+CREATE TABLE public.comentan
+(
+    pub_id integer NOT NULL,
+    user_id integer NOT NULL,
+    comment character varying(128) COLLATE pg_catalog."default",
+    fecha timestamp without time zone NOT NULL,
+    CONSTRAINT "COMENTAN_pkey" PRIMARY KEY (user_id, pub_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.comentan
+    OWNER to postgres;
+
+
+
+--FOLLOWERS
+CREATE TABLE public.followers
+(
+    user_id integer NOT NULL,
+    follow_id integer NOT NULL,
+    CONSTRAINT "FOLLOWERS_pkey" PRIMARY KEY (user_id, follow_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.followers
+    OWNER to postgres;
+
+COMMENT ON COLUMN public.followers.user_id
+    IS 'dab';
+
+
+--FOTOS
+CREATE TABLE public.fotos
+(
+    -- Inherited from table public.abstract_publicaciones: user_id integer NOT NULL,
+    -- Inherited from table public.abstract_publicaciones: pub_id integer NOT NULL,
+    -- Inherited from table public.abstract_publicaciones: descrip character varying(256) COLLATE pg_catalog."default",
+    -- Inherited from table public.abstract_publicaciones: hashtag character varying(32) COLLATE pg_catalog."default",
+    -- Inherited from table public.abstract_publicaciones: fecha time without time zone,
+    foto_id integer NOT NULL,
+    CONSTRAINT fotos_pkey PRIMARY KEY (foto_id)
+)
+    INHERITS (public.abstract_publicaciones)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.fotos
+    OWNER to postgres;
+
+
+--GUSTAN
+CREATE TABLE public.gustan
+(
+    user_id integer NOT NULL,
+    pub_id integer NOT NULL,
+    CONSTRAINT "GUSTAN_pkey" PRIMARY KEY (user_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.gustan
+    OWNER to postgres;
+
+
+
+-- USUARIOS
+CREATE TABLE public.usuarios
+(
+    user_id integer NOT NULL DEFAULT nextval('usuarios_user_id_seq'::regclass),
+    username character varying(128) COLLATE pg_catalog."default" NOT NULL,
+    user_pass character varying(256) COLLATE pg_catalog."default" NOT NULL,
+    bio character varying(256) COLLATE pg_catalog."default",
+    email character varying(256) COLLATE pg_catalog."default",
+    CONSTRAINT usuarios_pkey PRIMARY KEY (user_id)
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.usuarios
+    OWNER to postgres;
+
+
+
+--Videos
+CREATE TABLE public.videos
+(
+    -- Inherited from table public.abstract_publicaciones: user_id integer NOT NULL,
+    -- Inherited from table public.abstract_publicaciones: pub_id integer NOT NULL,
+    -- Inherited from table public.abstract_publicaciones: descrip character varying(256) COLLATE pg_catalog."default",
+    -- Inherited from table public.abstract_publicaciones: hashtag character varying(32) COLLATE pg_catalog."default",
+    -- Inherited from table public.abstract_publicaciones: fecha time without time zone,
+    video_id integer NOT NULL,
+    duracion interval,
+    CONSTRAINT videos_pkey PRIMARY KEY (video_id)
+)
+    INHERITS (public.abstract_publicaciones)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+ALTER TABLE public.videos
+    OWNER to postgres;
